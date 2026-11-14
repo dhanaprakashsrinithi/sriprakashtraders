@@ -6,8 +6,13 @@ import type { Database } from "@/integrations/supabase/types";
 export type Product = Database["public"]["Tables"]["products"]["Row"];
 
 export const listProducts = createServerFn({ method: "GET" }).handler(async () => {
-  const url = process.env["SUPABASE_URL"]!;
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+  // Netlify's deployed functions do not inherit the build's .env file.
+  // The public Vite settings are also available in the compiled server bundle.
+  const url = process.env["SUPABASE_URL"] || import.meta.env.VITE_SUPABASE_URL;
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    throw new Error("Product database configuration is missing.");
+  }
   const client = createClient<Database>(url, key, {
     auth: { persistSession: false },
     global: {
